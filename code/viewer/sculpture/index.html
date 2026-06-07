@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DroneSplat – Sculpture 3DGS Orbit Viewer</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #111; }
+  #info {
+    position: absolute; z-index: 10; top: 10px; left: 10px;
+    font-family: system-ui, sans-serif; color: #eee; font-size: 13px;
+    background: rgba(0,0,0,.55); padding: 8px 12px; border-radius: 8px; line-height: 1.5;
+  }
+  #info b { color: #7be67b; }
+  #loading {
+    position: absolute; z-index: 10; inset: 0; display: flex; align-items: center;
+    justify-content: center; color: #eee; font-family: system-ui, sans-serif; font-size: 18px;
+  }
+</style>
+</head>
+<body>
+<div id="info">
+  <b>DroneSplat · Sculpture</b><br/>
+  Drag kiri = putar &nbsp;|&nbsp; Drag kanan = geser &nbsp;|&nbsp; Scroll = zoom
+</div>
+<div id="loading">Memuat 3D Gaussian Splat… (±98 MB)</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "@mkkellogg/gaussian-splats-3d": "https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.4.4/build/gaussian-splats-3d.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
+
+const viewer = new GaussianSplats3D.Viewer({
+  cameraUp: [0, -1, 0],
+  initialCameraPosition: [0.14, -0.04, 0.29],
+  initialCameraLookAt: [2.348, 0.919, 10.701],
+  sharedMemoryForWorkers: false,
+  dynamicScene: false
+});
+
+viewer.addSplatScene('./sculpture.splat', {
+  format: GaussianSplats3D.SceneFormat.Splat,
+  showLoadingUI: false,
+  progressiveLoad: true
+}).then(() => {
+  document.getElementById('loading').style.display = 'none';
+  viewer.start();
+}).catch((e) => {
+  document.getElementById('loading').textContent = 'Gagal memuat: ' + e;
+});
+</script>
+</body>
+</html>

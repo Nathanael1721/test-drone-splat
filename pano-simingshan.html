@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Simingshan — 360° Panorama</title>
+<link rel="stylesheet" href="./lib/pannellum.css" />
+<style>
+  html,body{margin:0;height:100%;background:#000}
+  #panorama{width:100%;height:100%}
+  #note{position:absolute;z-index:10;bottom:10px;left:10px;font-family:system-ui,sans-serif;color:#ddd;
+        font-size:12px;background:rgba(0,0,0,.55);padding:6px 10px;border-radius:6px;max-width:360px;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="panorama"></div>
+<div id="note"><b>360° · Simingshan</b><br/>Drag to look around, scroll to zoom. Content is in the forward-down direction (gate &amp; road); sides/back are dark because the drone capture only faces one arc.</div>
+<script src="./lib/pannellum.js"></script>
+<script>
+pannellum.viewer('panorama',{
+  type:'equirectangular', panorama:'./assets/simingshan_equirect.png', autoLoad:true,
+  showZoomCtrl:true, showFullscreenCtrl:true, yaw:0, pitch:-18, hfov:100, minHfov:50, maxHfov:120, compass:false
+});
+</script>
+</body>
+</html>

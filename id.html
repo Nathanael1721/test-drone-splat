@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DroneSplat — Rekonstruksi 3D Robust dari Citra Drone (CVPR 2025)</title>
+<meta name="description" content="Penjelasan interaktif + viewer 3D Gaussian Splatting untuk DroneSplat (CVPR 2025): proses, metode paper, hasil, dan viewer orbit & 360° tertanam." />
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2230;--line:#2b3444;--text:#e6edf3;--mut:#9aa7b4;--acc:#7be67b;--acc2:#58a6ff;--warn:#f0b04a;--r:14px}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.65;font-size:16px}
+  a{color:var(--acc2);text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#0b0f15;border:1px solid var(--line);border-radius:6px;padding:.1em .4em;font-size:.88em;color:#cfe9ff}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  .topnav{position:sticky;top:0;z-index:50;background:rgba(13,17,23,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topnav .row{max-width:1080px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+  .brand{font-weight:800}.brand .g{background:linear-gradient(90deg,#7be67b,#58a6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .topnav nav{display:flex;gap:16px;margin-left:auto;flex-wrap:wrap}
+  .topnav nav a{color:var(--mut);font-size:14px}.topnav nav a:hover{color:var(--text)}
+  .topnav .cta{background:#13351f;border:1px solid #2f6b43;color:var(--acc);padding:4px 12px;border-radius:8px}
+  @media(max-width:760px){.topnav nav{display:none}}
+  header.hero{background:radial-gradient(1200px 400px at 70% -10%,#1d3b2a 0,transparent 60%),radial-gradient(900px 380px at 10% 0,#16314f 0,transparent 55%),#0d1117;border-bottom:1px solid var(--line);padding:50px 0 38px}
+  .badge{display:inline-block;background:#13351f;color:var(--acc);border:1px solid #2f6b43;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600}
+  h1{font-size:40px;line-height:1.15;margin:14px 0 8px}h1 .g{background:linear-gradient(90deg,#7be67b,#58a6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);font-size:18px;max-width:760px}
+  .authors{color:var(--mut);font-size:14px;margin-top:14px}
+  .hlinks{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+  .hlinks a{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;color:var(--text);font-size:14px}
+  .hlinks a:hover{border-color:var(--acc);text-decoration:none}
+  .langbar{margin-top:14px;font-size:13px;color:var(--mut)}
+  section{margin:0 0 50px;scroll-margin-top:64px}.secwrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  h2{font-size:27px;margin:8px 0 6px;border-bottom:1px solid var(--line);padding-bottom:8px}h2 .n{color:var(--acc);font-size:18px;font-weight:700;margin-right:8px}
+  h3{font-size:19px;margin:26px 0 6px;color:#fff}p{color:#d2dae3}.lead{font-size:17.5px;color:#cdd6df}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin:16px 0}
+  .card.acc{border-color:#2f6b43;background:linear-gradient(180deg,#12241a,#161b22)}
+  .card.blue{border-color:#1e466e;background:linear-gradient(180deg,#10202f,#161b22)}
+  .card.warn{border-color:#6b5320;background:linear-gradient(180deg,#241e10,#161b22)}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:820px){.cols{grid-template-columns:1fr}}
+  figure{margin:18px 0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px;overflow:hidden}
+  figure img{width:100%;display:block;border-radius:8px}figcaption{color:var(--mut);font-size:13.5px;margin-top:10px;text-align:center}
+  .pipe{display:flex;flex-wrap:wrap;align-items:stretch;margin:18px 0}
+  .step{flex:1 1 160px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin:6px;position:relative}
+  .step .k{position:absolute;top:-10px;left:14px;background:var(--acc);color:#06210f;font-weight:800;font-size:12px;border-radius:6px;padding:2px 8px}
+  .step h5{margin:8px 0 4px;font-size:15px}.step p{margin:0;font-size:13px;color:var(--mut)}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;overflow:hidden;border-radius:10px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}th{background:#0b0f15;color:var(--mut);font-weight:600}
+  td.l,th.l{text-align:left}tr:nth-child(even) td{background:#12161d}.best{color:var(--acc);font-weight:700}.ours{background:#13351f !important}
+  .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);margin-right:4px}
+  .metric{display:inline-flex;flex-direction:column;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin:6px}
+  .metric b{font-size:22px;color:var(--acc)}.metric span{font-size:12px;color:var(--mut)}.mrow{display:flex;flex-wrap:wrap;gap:4px}
+  .eq{background:#0b0f15;border:1px solid var(--line);border-left:3px solid var(--acc2);border-radius:8px;padding:10px 14px;margin:12px 0;font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#cfe9ff;overflow-x:auto}
+  .note{font-size:14px;color:var(--mut)}ul.tight li{margin:4px 0}
+  .viewerbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:16px 0}
+  .vbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line);background:#0b0f15}
+  .vgroup{display:flex;gap:6px;align-items:center}.vgroup .lbl{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-right:2px}
+  .vbtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .vbtn:hover{border-color:var(--acc)}.vbtn.on{background:#13351f;border-color:#2f6b43;color:var(--acc);font-weight:600}
+  .vspacer{margin-left:auto}.vlink{font-size:13px}
+  .vstage{position:relative;width:100%;height:560px;background:#0a0d12}.vstage iframe{width:100%;height:100%;border:0;display:block}
+  .vplaceholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px}
+  .vplaceholder p{color:var(--mut);max-width:520px;margin:0}
+  .playbtn{background:linear-gradient(90deg,#1f7a3d,#2f9d54);border:0;color:#fff;font-size:16px;font-weight:700;padding:12px 22px;border-radius:12px;cursor:pointer}
+  .playbtn:hover{filter:brightness(1.1)}@media(max-width:820px){.vstage{height:62vh}}
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mut);font-size:13.5px;text-align:center}.tag{color:var(--acc)}
+</style>
+</head>
+<body>
+
+<div class="topnav"><div class="row">
+  <span class="brand">Drone<span class="g">Splat</span></span>
+  <nav>
+    <a href="#overview">Ringkasan</a>
+    <a href="#pipeline">Proses</a>
+    <a href="#viewers">Viewer Langsung</a>
+    <a href="#masking">Metode</a>
+    <a href="#tables">Hasil</a>
+    <a href="#map">Reproduksi</a>
+    <a href="#beyond">Melampaui repo</a>
+    <a class="cta" href="#viewers">▶ Jelajah 3D</a>
+  </nav>
+</div></div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">CVPR 2025 · Highlight</span>
+    <h1>DroneSplat <span class="g">— Penjelasan Proses &amp; Paper</span></h1>
+    <p class="sub">3D Gaussian Splatting untuk rekonstruksi 3D robust dari citra drone in-the-wild.
+       Situs ini menjelaskan <b>apa yang kita jalankan</b>, <b>metode paper</b>, dan memungkinkan Anda <b>menjelajahi hasil rekonstruksi langsung</b> dalam 3D.</p>
+    <div class="authors">Jiadong Tang, Yu Gao, Dianyi Yang, Liqi Yan, Yufeng Yue, Yi Yang — Beijing Institute of Technology &amp; Hangzhou Dianzi University</div>
+    <div class="hlinks">
+      <a href="#viewers">🛰️ Viewer 3D Langsung</a>
+      <a href="https://arxiv.org/abs/2503.16964" target="_blank" rel="noopener">📄 Paper (arXiv)</a>
+      <a href="https://bityia.github.io/DroneSplat/" target="_blank" rel="noopener">🌐 Project Page</a>
+      <a href="https://github.com/BITyia/DroneSplat" target="_blank" rel="noopener">💻 Kode</a>
+    </div>
+    <div class="langbar">Bahasa: <b>Indonesia</b> · <a href="index.html">English</a></div>
+  </div>
+</header>
+
+<div class="secwrap">
+
+  <section id="overview">
+    <h2><span class="n">01</span>Ringkasan</h2>
+    <p class="lead">DroneSplat menyelesaikan dua masalah inti saat merekonstruksi scene 3D dari foto drone nyata:
+       <b class="tag">objek bergerak</b> (mobil, orang) yang merusak asumsi “scene statis”, dan
+       <b class="tag">sudut pandang terbatas</b> (sebagian area hanya terlihat dari sedikit foto).</p>
+    <div class="cols">
+      <div class="card acc">
+        <h3 style="margin-top:0">Inti idenya</h3>
+        <ul class="tight">
+          <li><b>Adaptive Local-Global Masking</b> — menyembunyikan piksel objek dinamis dari loss, ambangnya menyesuaikan otomatis.</li>
+          <li><b>Voxel-guided 3DGS</b> — inisialisasi dari multi-view stereo (DUSt3R) + optimasi terbatas grid voxel, menjaga geometri akurat saat view sedikit.</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h3 style="margin-top:0">Isi situs ini</h3>
+        <ul class="tight">
+          <li>Pipeline penuh pada 2 scene: <b>Simingshan</b> &amp; <b>Sculpture</b>.</li>
+          <li>Penjelasan metode paper beserta rumus kunci.</li>
+          <li><b>Viewer 3D interaktif</b> — orbit &amp; 360° — tertanam di bawah.</li>
+        </ul>
+      </div>
+    </div>
+    <figure><img src="assets/fig1.jpg" alt="DroneSplat teaser"/><figcaption>Figure 1 paper — DroneSplat menghapus distraktor dinamis (mobil) yang membuat 3DGS biasa menghasilkan artefak, sambil tetap merekonstruksi geometri akurat pada novel view.</figcaption></figure>
+  </section>
+
+  <section id="pipeline">
+    <h2><span class="n">02</span>Pipeline yang kita jalankan</h2>
+    <p>Empat tahap untuk tiap scene, di RTX 4080 (±7–12 menit training):</p>
+    <div class="pipe">
+      <div class="step"><span class="k">1</span><h5>Segmentasi 2D</h5><p>SAM2 menyegmentasi tiap instance → <code>masks.json</code></p></div>
+      <div class="step"><span class="k">2</span><h5>Training 3DGS</h5><p>7.000 iterasi, loss L1+SSIM dengan masking per-instance</p></div>
+      <div class="step"><span class="k">3</span><h5>Render</h5><p>Render ulang gambar train &amp; test dari model Gaussian</p></div>
+      <div class="step"><span class="k">4</span><h5>Evaluasi</h5><p>Hitung PSNR / SSIM / LPIPS vs ground truth</p></div>
+    </div>
+    <div class="cols">
+      <figure><img src="assets/seg_input.jpg" alt="input"/><figcaption>Gambar input (Simingshan)</figcaption></figure>
+      <figure><img src="assets/seg_mask.jpg" alt="segmentasi"/><figcaption>Segmentasi instance SAM2</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="results">
+    <h2><span class="n">03</span>Hasil rekonstruksi kita</h2>
+    <div class="cols">
+      <div class="card"><h3 style="margin-top:0">🏯 Simingshan <span class="pill">gerbang &amp; jalan · 24 foto</span></h3>
+        <div class="mrow"><div class="metric"><b>23.36</b><span>PSNR ↑</span></div><div class="metric"><b>0.762</b><span>SSIM ↑</span></div><div class="metric"><b>0.152</b><span>LPIPS ↓</span></div></div></div>
+      <div class="card"><h3 style="margin-top:0">🗿 Sculpture <span class="pill">patung &amp; taman · 42 foto</span></h3>
+        <div class="mrow"><div class="metric"><b>18.57</b><span>PSNR ↑</span></div><div class="metric"><b>0.502</b><span>SSIM ↑</span></div><div class="metric"><b>0.223</b><span>LPIPS ↓</span></div></div></div>
+    </div>
+    <p>Ground-truth (kiri) vs hasil render (kanan). Perhatikan <b>mobil &amp; orang yang bergerak ikut hilang</b> di hasil render — efek langsung masking distraktor.</p>
+    <div class="cols">
+      <figure><img src="assets/simingshan_compare.jpg" alt="Simingshan"/><figcaption>Simingshan — GT vs render. Jalan bersih dari kendaraan.</figcaption></figure>
+      <figure><img src="assets/sculpture_compare.jpg" alt="Sculpture"/><figcaption>Sculpture — GT vs render.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="viewers">
+    <h2><span class="n">04</span>Viewer interaktif langsung</h2>
+    <p class="lead">Jelajahi hasil rekonstruksi di sini. Pilih <b>scene</b> dan <b>mode</b>, lalu tekan play.
+       Model 3D di-stream ke browser (±44–94 MB) — beri waktu sebentar saat load pertama.</p>
+    <div class="viewerbox">
+      <div class="vbar">
+        <div class="vgroup"><span class="lbl">Scene</span>
+          <button class="vbtn on" data-scene="simingshan">🏯 Simingshan</button>
+          <button class="vbtn" data-scene="sculpture">🗿 Sculpture</button>
+        </div>
+        <div class="vgroup"><span class="lbl">Mode</span>
+          <button class="vbtn on" data-mode="orbit">🛰️ Orbit 3D</button>
+          <button class="vbtn" data-mode="pano">🌐 360°</button>
+        </div>
+        <div class="vspacer"></div>
+        <a class="vlink" id="vfull" href="orbit-simingshan.html" target="_blank" rel="noopener">Buka layar penuh ↗</a>
+      </div>
+      <div class="vstage">
+        <iframe id="vframe" title="DroneSplat viewer"></iframe>
+        <div class="vplaceholder" id="vplace">
+          <button class="playbtn" id="vplay">▶ Muat viewer 3D</button>
+          <p id="vdesc">Orbit 3D · Simingshan — drag untuk memutar, scroll zoom, drag-kanan geser. (~44 MB)</p>
+        </div>
+      </div>
+    </div>
+    <p class="note">Tips: mode <b>Orbit 3D</b> adalah model Gaussian-Splat asli dan cara terbaik memeriksa scene.
+       Mode <b>360°</b> adalah panorama gaya Street View; karena capture drone menghadap satu busur, hanya sebagian bola yang punya data.</p>
+  </section>
+
+  <section id="problem">
+    <h2><span class="n">05</span>Masalah yang dipecahkan paper</h2>
+    <div class="cols">
+      <div class="card warn"><h3 style="margin-top:0">① Scene dinamis (distraktor)</h3>
+        <p>Objek bergerak melanggar asumsi konsistensi multi-view 3DGS/NeRF → artefak &amp; floater.</p>
+        <p class="note">Metode lama butuh kelas terdefinisi (gagal bedakan mobil parkir vs melaju) atau pakai <b>ambang tetap</b> sepanjang training.</p></div>
+      <div class="card warn"><h3 style="margin-top:0">② Sudut pandang terbatas</h3>
+        <p>Sebagian area hanya tertangkap ~3 foto → radiance field <b>overfit</b> ke input, kualitas novel view buruk.</p>
+        <p class="note">InstantSplat menambah prior MVS tapi tanpa batasan optimasi lanjutan, sehingga prior terbuang.</p></div>
+    </div>
+  </section>
+
+  <section id="masking">
+    <h2><span class="n">06</span>Metode ① — Adaptive Local-Global Masking</h2>
+    <p class="lead">Mengenali piksel distraktor dinamis lalu menyembunyikannya dari loss — tanpa kelas terdefinisi, dengan ambang yang <b>menyesuaikan</b> tiap scene &amp; tahap training.</p>
+    <div class="eq">Loss 3DGS dengan mask:&nbsp; L = (1−λ)·<b>M</b>·L<sub>L1</sub> + λ·<b>M</b>·L<sub>D-SSIM</sub></div>
+    <h3>Residual per objek → ambang lokal adaptif</h3>
+    <p>SAM2 memberi mask tiap objek; semua piksel satu objek berbagi satu residual rata-rata. Ambang dihitung dari statistik residual frame (mean + variansi), dilonggarkan di awal training:</p>
+    <div class="eq">T<sub>L</sub>(t) = E[R] + Var[R]·( 1 + λ<sub>L</sub> · (T<sub>max</sub>−t)/T<sub>max</sub> )</div>
+    <h3>Complement global masking (video tracking SAM2)</h3>
+    <p>Mobil berhenti di lampu merah bisa lolos mask lokal. Ambang global lebih ketat menandai objek yang pernah ketahuan bergerak; 5 titik prompt dikirim ke <b>video tracking SAM2</b> untuk menandainya di semua frame.</p>
+    <div class="eq">T<sub>G</sub> = E[R] + λ<sub>G</sub>·Var[R] &nbsp;|&nbsp; Mask akhir: M(t) = M<sub>lokal</sub>(t) ∪ M<sub>global</sub>(t)</div>
+    <div class="card acc"><b>Intuisi:</b> lokal = “apa yang terlihat dinamis sekarang”; global = “objek yang pernah bergerak, dilacak di semua frame.”</div>
+  </section>
+
+  <section id="voxel">
+    <h2><span class="n">07</span>Metode ② — Voxel-guided Gaussian Splatting</h2>
+    <p class="lead">Geometri akurat saat view terbatas, memanfaatkan prior MVS tanpa membuat 3DGS kebablasan.</p>
+    <h3>Geometric-aware point sampling</h3>
+    <p>Point cloud padat DUSt3R disaring: ruang dibagi N voxel; tiap titik diberi skor confidence × fitur geometri FPFH; hanya top-k per voxel yang menginisialisasi Gaussian.</p>
+    <div class="eq">Score(p) = Conf(p) · F̃PFH(p) &nbsp;→ simpan k titik teratas per voxel</div>
+    <h3>Optimasi terpandu voxel</h3>
+    <p>Tiap Gaussian terikat voxelnya; bila melewati τ× ukuran voxel gradiennya meluruh, dan split/clone hanya ke voxel kosong. Voxel “sampah” (terlalu sedikit Gaussian, atau opacity rendah) dibuang.</p>
+    <div class="card"><b>Hyperparameter (paper):</b>
+      <span class="pill">λ<sub>L</sub>=0.4</span><span class="pill">λ<sub>G</sub>=2.8</span><span class="pill">N=80</span>
+      <span class="pill">k=3</span><span class="pill">τ=3.5</span><span class="pill">γ₁=0.003</span>
+      <span class="pill">γ₂=2</span><span class="pill">γ₃=0.075</span><span class="pill">7.000 iter · A100</span><span class="pill">masking @ iter 500</span></div>
+  </section>
+
+  <section id="tables">
+    <h2><span class="n">08</span>Hasil kuantitatif paper</h2>
+    <p>Dilatih pada gambar <b>dengan</b> distraktor, dievaluasi pada gambar <b>tanpa</b> distraktor. Sumber: Figure 6 paper.</p>
+    <table>
+      <thead><tr><th class="l">Metode</th><th colspan="3">Simingshan (high-dynamic)</th><th colspan="3">Sculpture</th></tr>
+      <tr><th class="l"></th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+      <tbody>
+        <tr><td class="l">3DGS (vanilla)</td><td>17.04</td><td>0.438</td><td>0.228</td><td>17.11</td><td>0.396</td><td>0.256</td></tr>
+        <tr><td class="l">GS-W</td><td>17.44</td><td>0.416</td><td>0.424</td><td>17.09</td><td>0.414</td><td>0.270</td></tr>
+        <tr><td class="l">WildGaussians</td><td>16.96</td><td>0.388</td><td>0.379</td><td>17.15</td><td>0.371</td><td>0.383</td></tr>
+        <tr><td class="l">NeRF On-the-go</td><td>15.58</td><td>0.318</td><td>0.471</td><td>17.04</td><td>0.228</td><td>0.606</td></tr>
+        <tr class="ours"><td class="l"><b>Ours (penuh)</b></td><td class="best">17.79</td><td class="best">0.469</td><td class="best">0.214</td><td class="best">19.64</td><td class="best">0.517</td><td class="best">0.192</td></tr>
+      </tbody>
+    </table>
+    <h3>Ablasi — tiap komponen membantu (scene dinamis)</h3>
+    <table>
+      <thead><tr><th class="l">Konfigurasi</th><th>Local</th><th>Global</th><th>Voxel</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+      <tbody>
+        <tr><td class="l">(a) baseline</td><td>✗</td><td>✗</td><td>✗</td><td>19.02</td><td>0.552</td><td>0.244</td></tr>
+        <tr><td class="l">(b) + Local</td><td>✓</td><td>✗</td><td>✗</td><td>20.71</td><td>0.609</td><td>0.223</td></tr>
+        <tr><td class="l">(c) + Global</td><td>✓</td><td>✓</td><td>✗</td><td>20.74</td><td>0.616</td><td>0.221</td></tr>
+        <tr class="ours"><td class="l">(d) penuh</td><td>✓</td><td>✓</td><td>✓</td><td class="best">20.86</td><td class="best">0.618</td><td class="best">0.217</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="map">
+    <h2><span class="n">09</span>Paper ↔ kode yang kita jalankan</h2>
+    <table>
+      <thead><tr><th class="l">Komponen paper</th><th>Di run kita?</th><th class="l">Catatan</th></tr></thead>
+      <tbody>
+        <tr><td class="l">SAM2 segmentasi instance</td><td class="best">Ya</td><td class="l"><code>seg_all_instances.py</code></td></tr>
+        <tr><td class="l">Masking residual per-instance</td><td class="best">Ya (sederhana)</td><td class="l"><code>train.py --use_masks</code>, ambang 0.4, mulai iter 500</td></tr>
+        <tr><td class="l">Adaptive threshold (E+Var)</td><td>Sebagian</td><td class="l">train.py rilis pakai versi instance-loss disederhanakan</td></tr>
+        <tr><td class="l">Global tracking (video SAM2)</td><td>Tidak</td><td class="l">tidak diaktifkan</td></tr>
+        <tr><td class="l">DUSt3R MVS priors</td><td>Tidak</td><td class="l">kita pakai pose &amp; titik COLMAP yang disediakan</td></tr>
+        <tr><td class="l">Voxel-guided optimization</td><td>Tidak</td><td class="l">jalur opsional via <code>preprocess.py</code></td></tr>
+      </tbody>
+    </table>
+    <p class="note">Jadi run kita paling mirip kontrol “Ours (COLMAP)” tanpa voxel-guided — bukan metode penuh — dan memakai split apa adanya, sehingga tidak 1:1 dengan protokol evaluasi paper.</p>
+  </section>
+
+  <section id="beyond">
+    <h2><span class="n">10</span>Melampaui repo — mereimplementasi bagian yang hilang</h2>
+    <p class="lead">Kami memverifikasi bahwa kode publik GitHub adalah <b>implementasi parsial</b>: hanya Adaptive <i>Local</i> Masking yang ada;
+       <b>Complement Global Masking</b> dan <b>Voxel-guided optimization</b> — dua dari empat kontribusi paper — <b>tidak ada</b>
+       (tidak ada <code>voxel</code>/<code>FPFH</code>/video-tracking di repo; densifikasi = 3DGS standar). Inilah penyebab utama
+       hasil rekonstruksi kita masih menyisakan “ghost”.</p>
+    <p>Maka kami mereimplementasi dua komponen yang hilang dari rumus paper, masing-masing di balik flag:</p>
+    <div class="cols">
+      <div class="card acc">
+        <h3 style="margin-top:0">① Complement Global Masking</h3>
+        <p>Objek yang residualnya melewati T<sub>G</sub> dilacak di <i>semua</i> frame dengan SAM2 video predictor (pusat + 4 titik tepi),
+           menangkap distraktor yang diam sementara. File baru <code>global_masking.py</code> + <code>--use_global_mask</code>.</p>
+      </div>
+      <div class="card acc">
+        <h3 style="margin-top:0">②b Voxel-guided optimization</h3>
+        <p>Gaussian diikat ke grid voxel; yang menyimpang gradiennya diluruhkan, dan voxel dengan <b>mean opacity rendah</b> dipangkas —
+           menghapus <b>Gaussian ghost</b>. Ditambahkan ke <code>gaussian_model.py</code> + <code>--use_voxel</code>.</p>
+      </div>
+    </div>
+    <figure>
+      <img src="assets/ghost_crop.jpg" alt="Ghost sebelum/sesudah — baseline vs lengkap"/>
+      <figcaption>Crop zoom area jalan: <b>GT</b> | <b>baseline</b> (local mask saja) | <b>lengkap</b> (+global +voxel). Baseline meninggalkan ghost merah mobil bergerak (baris 1–2); pipeline lengkap menghapusnya.</figcaption>
+    </figure>
+    <p class="note">Kesimpulan jujur: pengurangan ghost yang nyata &amp; terlihat — tapi inkremental di Simingshan, karena distraktornya mayoritas mobil bergerak yang sudah ditangani local mask. PSNR praktis tak berubah (23.2 vs 23.4) karena ghost yang dibuang sebagian tumpang-tindih distraktor yang masih ada di GT test. <b>Viewer Orbit 3D di atas kini memuat model Simingshan yang sudah ditingkatkan ini.</b> Untuk benar-benar menyamai paper masih perlu inisialisasi dense DUSt3R (②a) dan protokol evaluasi persis penulis.</p>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    Materi penjelasan untuk tugas Computer Vision · DroneSplat (Tang dkk., CVPR 2025).<br/>
+    Angka paper dikutip dari PDF resmi CVPR Open Access · gambar &amp; model 3D dari rekonstruksi kita sendiri.<br/>
+    Rendering 3D via <a href="https://github.com/mkkellogg/GaussianSplats3D" target="_blank" rel="noopener">GaussianSplats3D</a> · 360° via <a href="https://pannellum.org/" target="_blank" rel="noopener">Pannellum</a>.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var scene='simingshan',mode='orbit',loaded=false;
+  var frame=document.getElementById('vframe'),place=document.getElementById('vplace'),desc=document.getElementById('vdesc'),full=document.getElementById('vfull');
+  var sizes={simingshan:'~44 MB',sculpture:'~94 MB'},names={simingshan:'Simingshan',sculpture:'Sculpture'};
+  function page(){return (mode==='orbit'?'orbit-':'pano-')+scene+'.html';}
+  function descText(){return mode==='orbit'?('Orbit 3D · '+names[scene]+' — drag untuk memutar, scroll zoom, drag-kanan geser. ('+sizes[scene]+')'):('360° · '+names[scene]+' — drag untuk melihat sekeliling, scroll zoom.');}
+  function refresh(){full.href=page();desc.textContent=descText();if(loaded){frame.src=page();}}
+  function setActive(a,v){document.querySelectorAll('[data-'+a+']').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-'+a)===v);});}
+  document.querySelectorAll('[data-scene]').forEach(function(b){b.addEventListener('click',function(){scene=b.getAttribute('data-scene');setActive('scene',scene);refresh();});});
+  document.querySelectorAll('[data-mode]').forEach(function(b){b.addEventListener('click',function(){mode=b.getAttribute('data-mode');setActive('mode',mode);refresh();});});
+  document.getElementById('vplay').addEventListener('click',function(){loaded=true;place.style.display='none';frame.src=page();});
+  refresh();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DroneSplat — Robust 3D Reconstruction from Drone Imagery (CVPR 2025)</title>
+<meta name="description" content="Interactive explainer + live 3D Gaussian Splatting viewers for DroneSplat (CVPR 2025): process walkthrough, paper method, results, and embedded orbit & 360° viewers." />
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2b3444;
+    --text:#e6edf3; --mut:#9aa7b4; --acc:#7be67b; --acc2:#58a6ff; --warn:#f0b04a; --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.65;font-size:16px}
+  a{color:var(--acc2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:#0b0f15;border:1px solid var(--line);border-radius:6px;padding:.1em .4em;font-size:.88em;color:#cfe9ff}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* top nav */
+  .topnav{position:sticky;top:0;z-index:50;background:rgba(13,17,23,.86);backdrop-filter:blur(8px);
+          border-bottom:1px solid var(--line)}
+  .topnav .row{max-width:1080px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px}
+  .brand{font-weight:800;letter-spacing:.3px}
+  .brand .g{background:linear-gradient(90deg,#7be67b,#58a6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .topnav nav{display:flex;gap:16px;margin-left:auto;flex-wrap:wrap}
+  .topnav nav a{color:var(--mut);font-size:14px}
+  .topnav nav a:hover{color:var(--text)}
+  .topnav .cta{background:#13351f;border:1px solid #2f6b43;color:var(--acc);padding:4px 12px;border-radius:8px}
+  @media(max-width:760px){.topnav nav{display:none}}
+
+  header.hero{background:radial-gradient(1200px 400px at 70% -10%,#1d3b2a 0,transparent 60%),
+              radial-gradient(900px 380px at 10% 0,#16314f 0,transparent 55%),#0d1117;
+              border-bottom:1px solid var(--line);padding:50px 0 38px}
+  .badge{display:inline-block;background:#13351f;color:var(--acc);border:1px solid #2f6b43;
+         border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600}
+  h1{font-size:40px;line-height:1.15;margin:14px 0 8px}
+  h1 .g{background:linear-gradient(90deg,#7be67b,#58a6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);font-size:18px;max-width:760px}
+  .authors{color:var(--mut);font-size:14px;margin-top:14px}
+  .hlinks{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+  .hlinks a{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;color:var(--text);font-size:14px}
+  .hlinks a:hover{border-color:var(--acc);text-decoration:none}
+  .langbar{margin-top:14px;font-size:13px;color:var(--mut)}
+
+  section{margin:0 0 50px;scroll-margin-top:64px}
+  .secwrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  h2{font-size:27px;margin:8px 0 6px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h2 .n{color:var(--acc);font-size:18px;font-weight:700;margin-right:8px}
+  h3{font-size:19px;margin:26px 0 6px;color:#fff}
+  p{color:#d2dae3}
+  .lead{font-size:17.5px;color:#cdd6df}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin:16px 0}
+  .card.acc{border-color:#2f6b43;background:linear-gradient(180deg,#12241a,#161b22)}
+  .card.blue{border-color:#1e466e;background:linear-gradient(180deg,#10202f,#161b22)}
+  .card.warn{border-color:#6b5320;background:linear-gradient(180deg,#241e10,#161b22)}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+
+  figure{margin:18px 0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px;overflow:hidden}
+  figure img{width:100%;display:block;border-radius:8px}
+  figcaption{color:var(--mut);font-size:13.5px;margin-top:10px;text-align:center}
+
+  .pipe{display:flex;flex-wrap:wrap;align-items:stretch;margin:18px 0}
+  .step{flex:1 1 160px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin:6px;position:relative}
+  .step .k{position:absolute;top:-10px;left:14px;background:var(--acc);color:#06210f;font-weight:800;font-size:12px;border-radius:6px;padding:2px 8px}
+  .step h5{margin:8px 0 4px;font-size:15px}
+  .step p{margin:0;font-size:13px;color:var(--mut)}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;overflow:hidden;border-radius:10px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+  th{background:#0b0f15;color:var(--mut);font-weight:600}
+  td.l,th.l{text-align:left}
+  tr:nth-child(even) td{background:#12161d}
+  .best{color:var(--acc);font-weight:700}
+  .ours{background:#13351f !important}
+
+  .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);margin-right:4px}
+  .metric{display:inline-flex;flex-direction:column;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin:6px}
+  .metric b{font-size:22px;color:var(--acc)}
+  .metric span{font-size:12px;color:var(--mut)}
+  .mrow{display:flex;flex-wrap:wrap;gap:4px}
+  .eq{background:#0b0f15;border:1px solid var(--line);border-left:3px solid var(--acc2);border-radius:8px;
+      padding:10px 14px;margin:12px 0;font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#cfe9ff;overflow-x:auto}
+  .note{font-size:14px;color:var(--mut)}
+  ul.tight li{margin:4px 0}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+  .kv code{white-space:nowrap}
+
+  /* embedded viewer */
+  .viewerbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:16px 0}
+  .vbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line);background:#0b0f15}
+  .vgroup{display:flex;gap:6px;align-items:center}
+  .vgroup .lbl{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-right:2px}
+  .vbtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
+  .vbtn:hover{border-color:var(--acc)}
+  .vbtn.on{background:#13351f;border-color:#2f6b43;color:var(--acc);font-weight:600}
+  .vspacer{margin-left:auto}
+  .vlink{font-size:13px}
+  .vstage{position:relative;width:100%;height:560px;background:#0a0d12}
+  .vstage iframe{width:100%;height:100%;border:0;display:block}
+  .vplaceholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px}
+  .vplaceholder p{color:var(--mut);max-width:520px;margin:0}
+  .playbtn{background:linear-gradient(90deg,#1f7a3d,#2f9d54);border:0;color:#fff;font-size:16px;font-weight:700;
+           padding:12px 22px;border-radius:12px;cursor:pointer}
+  .playbtn:hover{filter:brightness(1.1)}
+  @media(max-width:820px){.vstage{height:62vh}}
+
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mut);font-size:13.5px;text-align:center}
+  .tag{color:var(--acc)}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="row">
+    <span class="brand">Drone<span class="g">Splat</span></span>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#pipeline">Process</a>
+      <a href="#viewers">Live Viewers</a>
+      <a href="#masking">Method</a>
+      <a href="#tables">Results</a>
+      <a href="#map">Reproduction</a>
+      <a href="#beyond">Beyond the repo</a>
+      <a class="cta" href="#viewers">▶ Explore 3D</a>
+    </nav>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">CVPR 2025 · Highlight</span>
+    <h1>DroneSplat <span class="g">— Process &amp; Paper Explainer</span></h1>
+    <p class="sub">3D Gaussian Splatting for robust 3D reconstruction from in-the-wild drone imagery.
+       This site walks through <b>what we ran</b>, the <b>paper’s method</b>, and lets you <b>explore the reconstructions live</b> in 3D.</p>
+    <div class="authors">Jiadong Tang, Yu Gao, Dianyi Yang, Liqi Yan, Yufeng Yue, Yi Yang — Beijing Institute of Technology &amp; Hangzhou Dianzi University</div>
+    <div class="hlinks">
+      <a href="#viewers">🛰️ Live 3D Viewers</a>
+      <a href="https://arxiv.org/abs/2503.16964" target="_blank" rel="noopener">📄 Paper (arXiv)</a>
+      <a href="https://bityia.github.io/DroneSplat/" target="_blank" rel="noopener">🌐 Project Page</a>
+      <a href="https://github.com/BITyia/DroneSplat" target="_blank" rel="noopener">💻 Code</a>
+    </div>
+    <div class="langbar">Language: <b>English</b> · <a href="id.html">Bahasa Indonesia</a></div>
+  </div>
+</header>
+
+<div class="secwrap">
+
+  <section id="overview">
+    <h2><span class="n">01</span>Overview</h2>
+    <p class="lead">DroneSplat tackles two core problems when reconstructing 3D scenes from real-world drone photos:
+       <b class="tag">moving objects</b> (cars, people) that break the “static scene” assumption, and
+       <b class="tag">limited viewpoints</b> (some areas are seen by only a few photos).</p>
+    <div class="cols">
+      <div class="card acc">
+        <h3 style="margin-top:0">The key idea</h3>
+        <ul class="tight">
+          <li><b>Adaptive Local-Global Masking</b> — hides dynamic-object pixels from the loss, with a threshold that adapts automatically.</li>
+          <li><b>Voxel-guided 3DGS</b> — initialize from multi-view stereo (DUSt3R) + optimization constrained by a voxel grid, keeping geometry accurate when views are sparse.</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h3 style="margin-top:0">What this site contains</h3>
+        <ul class="tight">
+          <li>The full pipeline we ran on 2 scenes: <b>Simingshan</b> &amp; <b>Sculpture</b>.</li>
+          <li>An explanation of the paper’s method, with the key equations.</li>
+          <li><b>Live, draggable 3D viewers</b> — orbit &amp; 360° — embedded below.</li>
+        </ul>
+      </div>
+    </div>
+    <figure>
+      <img src="assets/fig1.jpg" alt="DroneSplat teaser"/>
+      <figcaption>Paper Figure 1 — DroneSplat removes dynamic distractors (cars on the road) that make vanilla 3DGS produce artifacts, while still reconstructing accurate geometry at novel views.</figcaption>
+    </figure>
+  </section>
+
+  <section id="pipeline">
+    <h2><span class="n">02</span>The pipeline we ran</h2>
+    <p>For each scene we ran four stages on an RTX 4080 (≈7–12 min training):</p>
+    <div class="pipe">
+      <div class="step"><span class="k">1</span><h5>2D Segmentation</h5><p>SAM2 segments every instance per image → <code>masks.json</code></p></div>
+      <div class="step"><span class="k">2</span><h5>3DGS Training</h5><p>7,000 iterations, L1+SSIM loss with per-instance masking</p></div>
+      <div class="step"><span class="k">3</span><h5>Render</h5><p>Re-render train &amp; test images from the Gaussian model</p></div>
+      <div class="step"><span class="k">4</span><h5>Evaluation</h5><p>Compute PSNR / SSIM / LPIPS vs ground truth</p></div>
+    </div>
+    <div class="cols">
+      <figure><img src="assets/seg_input.jpg" alt="input"/><figcaption>Input image (Simingshan)</figcaption></figure>
+      <figure><img src="assets/seg_mask.jpg" alt="segmentation"/><figcaption>SAM2 instance segmentation</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="results">
+    <h2><span class="n">03</span>Our reconstruction results</h2>
+    <div class="cols">
+      <div class="card">
+        <h3 style="margin-top:0">🏯 Simingshan <span class="pill">gate &amp; road · 24 photos</span></h3>
+        <div class="mrow">
+          <div class="metric"><b>23.36</b><span>PSNR ↑</span></div>
+          <div class="metric"><b>0.762</b><span>SSIM ↑</span></div>
+          <div class="metric"><b>0.152</b><span>LPIPS ↓</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">🗿 Sculpture <span class="pill">statue &amp; garden · 42 photos</span></h3>
+        <div class="mrow">
+          <div class="metric"><b>18.57</b><span>PSNR ↑</span></div>
+          <div class="metric"><b>0.502</b><span>SSIM ↑</span></div>
+          <div class="metric"><b>0.223</b><span>LPIPS ↓</span></div>
+        </div>
+      </div>
+    </div>
+    <p>Ground-truth (left) vs rendered output (right). Notice the <b>moving cars &amp; people disappear</b> in the render — a direct effect of distractor masking.</p>
+    <div class="cols">
+      <figure><img src="assets/simingshan_compare.jpg" alt="Simingshan GT vs render"/><figcaption>Simingshan — GT vs render. The road is cleared of vehicles.</figcaption></figure>
+      <figure><img src="assets/sculpture_compare.jpg" alt="Sculpture GT vs render"/><figcaption>Sculpture — GT vs render.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ===== EMBEDDED LIVE VIEWERS ===== -->
+  <section id="viewers">
+    <h2><span class="n">04</span>Live interactive viewers</h2>
+    <p class="lead">Explore the actual reconstructions right here. Pick a <b>scene</b> and a <b>mode</b>, then press play.
+       The 3D model streams into your browser (≈44–94 MB) — give it a moment on first load.</p>
+    <div class="viewerbox">
+      <div class="vbar">
+        <div class="vgroup"><span class="lbl">Scene</span>
+          <button class="vbtn on" data-scene="simingshan">🏯 Simingshan</button>
+          <button class="vbtn" data-scene="sculpture">🗿 Sculpture</button>
+        </div>
+        <div class="vgroup"><span class="lbl">Mode</span>
+          <button class="vbtn on" data-mode="orbit">🛰️ 3D Orbit</button>
+          <button class="vbtn" data-mode="pano">🌐 360°</button>
+        </div>
+        <div class="vspacer"></div>
+        <a class="vlink" id="vfull" href="orbit-simingshan.html" target="_blank" rel="noopener">Open fullscreen ↗</a>
+      </div>
+      <div class="vstage">
+        <iframe id="vframe" title="DroneSplat viewer" all=""></iframe>
+        <div class="vplaceholder" id="vplace">
+          <button class="playbtn" id="vplay">▶ Load 3D viewer</button>
+          <p id="vdesc">3D Orbit · Simingshan — drag to rotate, scroll to zoom, right-drag to pan. (~44 MB)</p>
+        </div>
+      </div>
+    </div>
+    <p class="note">Tip: the <b>3D Orbit</b> mode is the real Gaussian-Splat model and the best way to inspect each scene.
+       The <b>360°</b> mode is a Street-View-style panorama; because drone captures face one arc, only part of the sphere has data.</p>
+  </section>
+
+  <!-- ===== PAPER ===== -->
+  <section id="problem">
+    <h2><span class="n">05</span>The problems the paper solves</h2>
+    <div class="cols">
+      <div class="card warn">
+        <h3 style="margin-top:0">① Dynamic scenes (distractors)</h3>
+        <p>Moving objects violate the multi-view consistency assumption of 3DGS/NeRF → artifacts &amp; floaters.</p>
+        <p class="note">Prior methods need predefined classes (can’t tell a parked car from a moving one) or use a <b>fixed threshold</b> throughout training.</p>
+      </div>
+      <div class="card warn">
+        <h3 style="margin-top:0">② Limited viewpoints</h3>
+        <p>Some areas are captured by only ~3 photos → radiance fields <b>overfit</b> the inputs and look poor at novel views.</p>
+        <p class="note">InstantSplat adds MVS priors but no constraint on later optimization, so the prior is wasted.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="masking">
+    <h2><span class="n">06</span>Method ① — Adaptive Local-Global Masking</h2>
+    <p class="lead">Identify dynamic-distractor pixels and hide them from the loss — without predefined classes, and with a threshold that <b>adapts</b> per scene &amp; training stage.</p>
+    <div class="eq">3DGS loss with mask:&nbsp; L = (1−λ)·<b>M</b>·L<sub>L1</sub> + λ·<b>M</b>·L<sub>D-SSIM</sub></div>
+    <h3>Object-wise residuals → adaptive local threshold</h3>
+    <p>SAM2 gives a mask per object; all pixels of one object share one average residual. The threshold comes from the frame’s residual statistics (mean + variance), relaxed early in training:</p>
+    <div class="eq">T<sub>L</sub>(t) = E[R] + Var[R]·( 1 + λ<sub>L</sub> · (T<sub>max</sub>−t)/T<sub>max</sub> )</div>
+    <h3>Complement global masking (SAM2 video tracking)</h3>
+    <p>A car stopped at a red light can slip past the local mask. A stricter global threshold flags any object ever caught moving; 5 prompt points feed SAM2’s <b>video tracking</b> to mask it across all frames.</p>
+    <div class="eq">T<sub>G</sub> = E[R] + λ<sub>G</sub>·Var[R] &nbsp;|&nbsp; Final mask: M(t) = M<sub>local</sub>(t) ∪ M<sub>global</sub>(t)</div>
+    <div class="card acc"><b>Intuition:</b> local = “what looks dynamic now”; global = “objects ever caught moving, tracked everywhere.”</div>
+  </section>
+
+  <section id="voxel">
+    <h2><span class="n">07</span>Method ② — Voxel-guided Gaussian Splatting</h2>
+    <p class="lead">Accurate geometry under limited views, exploiting MVS priors without letting 3DGS run away.</p>
+    <h3>Geometric-aware point sampling</h3>
+    <p>DUSt3R’s dense cloud is filtered: space is split into N voxels; each point is scored by confidence × FPFH geometric feature; only the top-k per voxel initialize Gaussians.</p>
+    <div class="eq">Score(p) = Conf(p) · F̃PFH(p) &nbsp;→ keep top-k points per voxel</div>
+    <h3>Voxel-guided optimization</h3>
+    <p>Each Gaussian is bound to its voxel; if it strays past τ× the voxel size its gradient decays, and splits/clones only go into empty voxels. Junk voxels (too few Gaussians, or low opacity) are pruned.</p>
+    <div class="card">
+      <b>Hyperparameters (paper):</b>
+      <span class="pill">λ<sub>L</sub>=0.4</span><span class="pill">λ<sub>G</sub>=2.8</span><span class="pill">N=80</span>
+      <span class="pill">k=3</span><span class="pill">τ=3.5</span><span class="pill">γ₁=0.003</span>
+      <span class="pill">γ₂=2</span><span class="pill">γ₃=0.075</span><span class="pill">7,000 iters · A100</span>
+      <span class="pill">masking @ iter 500</span>
+    </div>
+  </section>
+
+  <section id="tables">
+    <h2><span class="n">08</span>Paper’s quantitative results</h2>
+    <p>Trained on images <b>with</b> distractors, evaluated on images <b>without</b>. Source: paper Figure 6.</p>
+    <table>
+      <thead><tr><th class="l">Method</th><th colspan="3">Simingshan (high-dynamic)</th><th colspan="3">Sculpture</th></tr>
+      <tr><th class="l"></th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+      <tbody>
+        <tr><td class="l">3DGS (vanilla)</td><td>17.04</td><td>0.438</td><td>0.228</td><td>17.11</td><td>0.396</td><td>0.256</td></tr>
+        <tr><td class="l">GS-W</td><td>17.44</td><td>0.416</td><td>0.424</td><td>17.09</td><td>0.414</td><td>0.270</td></tr>
+        <tr><td class="l">WildGaussians</td><td>16.96</td><td>0.388</td><td>0.379</td><td>17.15</td><td>0.371</td><td>0.383</td></tr>
+        <tr><td class="l">NeRF On-the-go</td><td>15.58</td><td>0.318</td><td>0.471</td><td>17.04</td><td>0.228</td><td>0.606</td></tr>
+        <tr class="ours"><td class="l"><b>Ours (full)</b></td><td class="best">17.79</td><td class="best">0.469</td><td class="best">0.214</td><td class="best">19.64</td><td class="best">0.517</td><td class="best">0.192</td></tr>
+      </tbody>
+    </table>
+    <h3>Ablation — each component helps (dynamic scenes)</h3>
+    <table>
+      <thead><tr><th class="l">Configuration</th><th>Local</th><th>Global</th><th>Voxel</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+      <tbody>
+        <tr><td class="l">(a) baseline</td><td>✗</td><td>✗</td><td>✗</td><td>19.02</td><td>0.552</td><td>0.244</td></tr>
+        <tr><td class="l">(b) + Local Masking</td><td>✓</td><td>✗</td><td>✗</td><td>20.71</td><td>0.609</td><td>0.223</td></tr>
+        <tr><td class="l">(c) + Global Masking</td><td>✓</td><td>✓</td><td>✗</td><td>20.74</td><td>0.616</td><td>0.221</td></tr>
+        <tr class="ours"><td class="l">(d) full</td><td>✓</td><td>✓</td><td>✓</td><td class="best">20.86</td><td class="best">0.618</td><td class="best">0.217</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="map">
+    <h2><span class="n">09</span>Paper ↔ the code we ran</h2>
+    <p>What we reproduced vs the paper’s full method:</p>
+    <table>
+      <thead><tr><th class="l">Paper component</th><th>In our run?</th><th class="l">Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="l">SAM2 instance segmentation</td><td class="best">Yes</td><td class="l"><code>seg_all_instances.py</code></td></tr>
+        <tr><td class="l">Per-instance residual masking</td><td class="best">Yes (simplified)</td><td class="l"><code>train.py --use_masks</code>, threshold 0.4, starts @ iter 500</td></tr>
+        <tr><td class="l">Adaptive threshold (E+Var)</td><td>Partial</td><td class="l">released train.py uses a simplified instance-loss variant</td></tr>
+        <tr><td class="l">Global tracking (SAM2 video)</td><td>No</td><td class="l">not enabled</td></tr>
+        <tr><td class="l">DUSt3R MVS priors</td><td>No</td><td class="l">we used the provided COLMAP poses &amp; points</td></tr>
+        <tr><td class="l">Voxel-guided optimization</td><td>No</td><td class="l">optional path via <code>preprocess.py</code></td></tr>
+      </tbody>
+    </table>
+    <p class="note">So our run is closest to the paper’s “Ours (COLMAP)” control without voxel-guided — not the full method — and uses the dataset split as-is, so numbers aren’t 1:1 with the paper’s distractor-free evaluation.</p>
+  </section>
+
+  <section id="beyond">
+    <h2><span class="n">10</span>Beyond the repo — re-implementing the missing pieces</h2>
+    <p class="lead">We verified that the public GitHub code is a <b>partial implementation</b>: only Adaptive <i>Local</i> Masking ships;
+       the <b>Complement Global Masking</b> and <b>Voxel-guided optimization</b> — two of the paper’s four contributions — are absent
+       (no <code>voxel</code>/<code>FPFH</code>/video-tracking anywhere in the repo; densification is stock 3DGS). That is the main reason
+       our reconstructions still showed faint “ghosts”.</p>
+    <p>So we re-implemented the two missing components from the paper’s equations, each behind a flag:</p>
+    <div class="cols">
+      <div class="card acc">
+        <h3 style="margin-top:0">① Complement Global Masking</h3>
+        <p>Objects whose residual exceeds T<sub>G</sub> are tracked across <i>all</i> frames with SAM2’s video predictor (center + 4 edge prompts),
+           catching distractors that are momentarily static. New <code>global_masking.py</code> + <code>--use_global_mask</code>.</p>
+      </div>
+      <div class="card acc">
+        <h3 style="margin-top:0">②b Voxel-guided optimization</h3>
+        <p>Gaussians are bound to a voxel grid; strayed ones get gradient-decayed, and voxels whose <b>mean opacity</b> is low are pruned —
+           removing faint <b>ghost Gaussians</b>. Added to <code>gaussian_model.py</code> + <code>--use_voxel</code>.</p>
+      </div>
+    </div>
+    <figure>
+      <img src="assets/ghost_crop.jpg" alt="Ghost before/after — baseline vs full"/>
+      <figcaption>Zoomed road crops: <b>GT</b> | <b>baseline</b> (local mask only) | <b>full</b> (+global +voxel). The baseline leaves a red ghost smear of a moving car on the road (rows 1–2); the re-implemented full pipeline removes it.</figcaption>
+    </figure>
+    <p class="note">Honest takeaway: a real, visible ghost reduction — but incremental on Simingshan, since its distractors are mostly moving cars the local mask already handled. PSNR is essentially unchanged (23.2 vs 23.4) because the removed ghosts partly overlap distractors still present in the test GT. The <b>3D Orbit viewer above now loads this improved Simingshan model.</b> Fully matching the paper would still need the DUSt3R dense initialisation (②a) and the authors’ exact evaluation protocol.</p>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    Explainer material for a Computer Vision course · DroneSplat (Tang et al., CVPR 2025).<br/>
+    Paper numbers quoted from the official CVPR Open Access PDF · result images &amp; 3D models from our own reconstruction.<br/>
+    3D rendering via <a href="https://github.com/mkkellogg/GaussianSplats3D" target="_blank" rel="noopener">GaussianSplats3D</a> · 360° via <a href="https://pannellum.org/" target="_blank" rel="noopener">Pannellum</a>.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var scene = 'simingshan', mode = 'orbit', loaded = false;
+  var frame = document.getElementById('vframe');
+  var place = document.getElementById('vplace');
+  var desc  = document.getElementById('vdesc');
+  var full  = document.getElementById('vfull');
+  var sizes = {simingshan:'~44 MB', sculpture:'~94 MB'};
+  var names = {simingshan:'Simingshan', sculpture:'Sculpture'};
+
+  function page(){ return (mode==='orbit'?'orbit-':'pano-') + scene + '.html'; }
+  function descText(){
+    if(mode==='orbit') return '3D Orbit · '+names[scene]+' — drag to rotate, scroll to zoom, right-drag to pan. ('+sizes[scene]+')';
+    return '360° Panorama · '+names[scene]+' — drag to look around, scroll to zoom.';
+  }
+  function refresh(){
+    full.href = page();
+    desc.textContent = descText();
+    if(loaded){ frame.src = page(); }
+  }
+  function setActive(attr,val){
+    document.querySelectorAll('[data-'+attr+']').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-'+attr)===val);
+    });
+  }
+  document.querySelectorAll('[data-scene]').forEach(function(b){
+    b.addEventListener('click',function(){ scene=b.getAttribute('data-scene'); setActive('scene',scene); refresh(); });
+  });
+  document.querySelectorAll('[data-mode]').forEach(function(b){
+    b.addEventListener('click',function(){ mode=b.getAttribute('data-mode'); setActive('mode',mode); refresh(); });
+  });
+  document.getElementById('vplay').addEventListener('click',function(){
+    loaded=true; place.style.display='none'; frame.src=page();
+  });
+  refresh();
+})();
+</script>
+</body>
+</html>

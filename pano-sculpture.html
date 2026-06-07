@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sculpture — 360° Panorama</title>
+<link rel="stylesheet" href="./lib/pannellum.css" />
+<style>
+  html,body{margin:0;height:100%;background:#000}
+  #panorama{width:100%;height:100%}
+  #note{position:absolute;z-index:10;bottom:10px;left:10px;font-family:system-ui,sans-serif;color:#ddd;
+        font-size:12px;background:rgba(0,0,0,.55);padding:6px 10px;border-radius:6px;max-width:380px;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="panorama"></div>
+<div id="note"><b>360° · Sculpture</b><br/>Drag to look around. This scene was a tight overhead orbit, so content sits below (statue &amp; garden) — the <b>3DGS orbit</b> view is far more representative for this scene.</div>
+<script src="./lib/pannellum.js"></script>
+<script>
+pannellum.viewer('panorama',{
+  type:'equirectangular', panorama:'./assets/sculpture_equirect.png', autoLoad:true,
+  showZoomCtrl:true, showFullscreenCtrl:true, yaw:0, pitch:-55, hfov:110, minHfov:50, maxHfov:120, compass:false
+});
+</script>
+</body>
+</html>

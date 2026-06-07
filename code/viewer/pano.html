@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DroneSplat – Simingshan 360° Panorama</title>
+<link rel="stylesheet" href="./lib/pannellum.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: #000; }
+  #panorama { width: 100%; height: 100%; }
+  #note {
+    position: absolute; z-index: 10; bottom: 10px; left: 10px;
+    font-family: system-ui, sans-serif; color: #ddd; font-size: 12px;
+    background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 6px; max-width: 360px; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div id="panorama"></div>
+<div id="note">
+  <b>360° gaya Street View · Simingshan</b><br/>
+  Drag untuk melihat sekeliling, scroll untuk zoom. Arah depan-bawah = gerbang & jalan;
+  sisi/atas/belakang gelap karena capture drone hanya menghadap depan-bawah.
+</div>
+<script src="./lib/pannellum.js"></script>
+<script>
+pannellum.viewer('panorama', {
+  type: 'equirectangular',
+  panorama: './equirect.png',
+  autoLoad: true,
+  showZoomCtrl: true,
+  showFullscreenCtrl: true,
+  yaw: 0,        // look toward the gate (front)
+  pitch: -18,    // tilt down toward the road
+  hfov: 100,
+  minHfov: 50,
+  maxHfov: 120,
+  compass: false
+});
+</script>
+</body>
+</html>

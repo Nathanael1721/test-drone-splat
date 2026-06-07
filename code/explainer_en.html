@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DroneSplat — Process &amp; Paper Explainer (CVPR 2025)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2b3444;
+    --text:#e6edf3; --mut:#9aa7b4; --acc:#7be67b; --acc2:#58a6ff; --warn:#f0b04a;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.65;font-size:16px}
+  a{color:var(--acc2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:#0b0f15;border:1px solid var(--line);border-radius:6px;padding:.1em .4em;font-size:.88em;color:#cfe9ff}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* hero */
+  header.hero{background:radial-gradient(1200px 400px at 70% -10%,#1d3b2a 0,transparent 60%),
+              radial-gradient(900px 380px at 10% 0,#16314f 0,transparent 55%),#0d1117;
+              border-bottom:1px solid var(--line);padding:56px 0 40px}
+  .badge{display:inline-block;background:#13351f;color:var(--acc);border:1px solid #2f6b43;
+         border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600;letter-spacing:.3px}
+  h1{font-size:40px;line-height:1.15;margin:14px 0 8px}
+  h1 .g{background:linear-gradient(90deg,#7be67b,#58a6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);font-size:18px;max-width:760px}
+  .authors{color:var(--mut);font-size:14px;margin-top:14px}
+  .hlinks{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+  .hlinks a{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;color:var(--text);font-size:14px}
+  .hlinks a:hover{border-color:var(--acc);text-decoration:none}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:220px 1fr;gap:34px;align-items:start;padding:34px 0}
+  nav.toc{position:sticky;top:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+  nav.toc h4{margin:0 0 10px;font-size:12px;letter-spacing:1px;color:var(--mut);text-transform:uppercase}
+  nav.toc a{display:block;color:var(--mut);font-size:14px;padding:5px 0;border-left:2px solid transparent;padding-left:10px}
+  nav.toc a:hover{color:var(--text);border-left-color:var(--acc)}
+  nav.toc .grp{margin-top:12px;color:var(--acc);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+
+  section{margin:0 0 46px;scroll-margin-top:18px}
+  h2{font-size:27px;margin:8px 0 6px;border-bottom:1px solid var(--line);padding-bottom:8px}
+  h3{font-size:19px;margin:26px 0 6px;color:#fff}
+  h2 .n{color:var(--acc);font-size:18px;font-weight:700;margin-right:8px}
+  p{color:#d2dae3}
+  .lead{font-size:17.5px;color:#cdd6df}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin:16px 0}
+  .card.acc{border-color:#2f6b43;background:linear-gradient(180deg,#12241a,#161b22)}
+  .card.blue{border-color:#1e466e;background:linear-gradient(180deg,#10202f,#161b22)}
+  .card.warn{border-color:#6b5320;background:linear-gradient(180deg,#241e10,#161b22)}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}.grid{grid-template-columns:1fr}nav.toc{display:none}}
+
+  figure{margin:18px 0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px;overflow:hidden}
+  figure img{width:100%;display:block;border-radius:8px}
+  figcaption{color:var(--mut);font-size:13.5px;margin-top:10px;text-align:center}
+
+  /* pipeline */
+  .pipe{display:flex;gap:0;flex-wrap:wrap;align-items:stretch;margin:18px 0}
+  .step{flex:1 1 160px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin:6px;position:relative}
+  .step .k{position:absolute;top:-10px;left:14px;background:var(--acc);color:#06210f;font-weight:800;font-size:12px;border-radius:6px;padding:2px 8px}
+  .step h5{margin:8px 0 4px;font-size:15px}
+  .step p{margin:0;font-size:13px;color:var(--mut)}
+  .step code{font-size:11.5px}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;overflow:hidden;border-radius:10px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+  th{background:#0b0f15;color:var(--mut);font-weight:600}
+  td.l,th.l{text-align:left}
+  tr:nth-child(even) td{background:#12161d}
+  .best{color:var(--acc);font-weight:700}
+  .ours{background:#13351f !important}
+
+  .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);margin-right:4px}
+  .metric{display:inline-flex;flex-direction:column;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin:6px}
+  .metric b{font-size:22px;color:var(--acc)}
+  .metric span{font-size:12px;color:var(--mut)}
+  .mrow{display:flex;flex-wrap:wrap;gap:4px}
+
+  .eq{background:#0b0f15;border:1px solid var(--line);border-left:3px solid var(--acc2);border-radius:8px;
+      padding:10px 14px;margin:12px 0;font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#cfe9ff;overflow-x:auto}
+  .note{font-size:14px;color:var(--mut)}
+  ul.tight li{margin:4px 0}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+  .kv code{white-space:nowrap}
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--mut);font-size:13.5px;text-align:center}
+  .tag{color:var(--acc)}
+  .langbar{margin-top:14px;font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">CVPR 2025 · Highlight</span>
+    <h1>DroneSplat <span class="g">— Process &amp; Paper Explainer</span></h1>
+    <p class="sub">3D Gaussian Splatting for robust 3D reconstruction from in-the-wild drone imagery.
+       This page walks through <b>what we ran</b> (pipeline + results) and <b>what the paper proposes</b>, visually.</p>
+    <div class="authors">Jiadong Tang, Yu Gao, Dianyi Yang, Liqi Yan, Yufeng Yue, Yi Yang — Beijing Institute of Technology &amp; Hangzhou Dianzi University</div>
+    <div class="hlinks">
+      <a href="https://arxiv.org/abs/2503.16964" target="_blank">📄 Paper (arXiv)</a>
+      <a href="https://bityia.github.io/DroneSplat/" target="_blank">🌐 Project Page</a>
+      <a href="https://github.com/BITyia/DroneSplat" target="_blank">💻 Code</a>
+      <a href="http://localhost:8765/index.html" target="_blank">🟢 3DGS Viewer (Simingshan)</a>
+      <a href="http://localhost:8765/sculpture/index.html" target="_blank">🟢 3DGS Viewer (Sculpture)</a>
+    </div>
+    <div class="langbar">Language: <b>English</b> · <a href="explainer.html">Bahasa Indonesia</a></div>
+  </div>
+</header>
+
+<div class="wrap grid">
+  <nav class="toc">
+    <h4>Contents</h4>
+    <div class="grp">Part 1 · Process</div>
+    <a href="#overview">Overview</a>
+    <a href="#setup">Environment setup</a>
+    <a href="#pipeline">4-stage pipeline</a>
+    <a href="#results">Our reconstruction</a>
+    <a href="#viewer">Interactive viewers</a>
+    <div class="grp">Part 2 · Paper</div>
+    <a href="#problem">Problem</a>
+    <a href="#framework">Framework</a>
+    <a href="#masking">Adaptive Local-Global Masking</a>
+    <a href="#voxel">Voxel-guided 3DGS</a>
+    <a href="#dataset">Dataset</a>
+    <a href="#tables">Paper results</a>
+    <a href="#ablation">Ablations</a>
+    <a href="#contrib">Contributions</a>
+    <a href="#map">Paper ↔ our code</a>
+  </nav>
+
+  <main>
+
+  <!-- ============ PART 1 ============ -->
+  <section id="overview">
+    <h2><span class="n">01</span>Overview</h2>
+    <p class="lead">DroneSplat tackles two core problems when reconstructing 3D scenes from real-world drone photos:
+       <b class="tag">moving objects</b> (cars, people) that break the “static scene” assumption, and
+       <b class="tag">limited viewpoints</b> (some areas are seen by only a few photos).</p>
+    <div class="cols">
+      <div class="card acc">
+        <h3 style="margin-top:0">The key idea</h3>
+        <ul class="tight">
+          <li><b>Adaptive Local-Global Masking</b> — hides dynamic-object pixels from the loss, with a threshold that adapts automatically.</li>
+          <li><b>Voxel-guided 3DGS</b> — initialize from multi-view stereo (DUSt3R) + optimization constrained by a voxel grid, keeping geometry accurate when views are sparse.</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h3 style="margin-top:0">What we did</h3>
+        <ul class="tight">
+          <li>Built the CUDA environment from scratch (Windows + RTX 4080).</li>
+          <li>Ran the full pipeline on 2 scenes: <b>Simingshan</b> &amp; <b>Sculpture</b>.</li>
+          <li>Built interactive viewers: 3DGS orbit &amp; 360° panorama.</li>
+        </ul>
+      </div>
+    </div>
+    <figure>
+      <img src="assets/fig1.jpg" alt="DroneSplat teaser"/>
+      <figcaption>Paper Figure 1 — DroneSplat removes dynamic distractors (cars on the road) that make vanilla 3DGS produce artifacts, while still reconstructing accurate geometry at novel views.</figcaption>
+    </figure>
+  </section>
+
+  <section id="setup">
+    <h2><span class="n">02</span>Environment setup</h2>
+    <p>Biggest hurdle: this machine uses Visual Studio 2025 (MSVC 14.5), which CUDA 12.1’s nvcc rejects.
+       The fix was to compile with <b>nvcc 12.6</b> while keeping PyTorch on the cu121 runtime.</p>
+    <div class="card">
+      <div class="kv">
+        <code>conda create -n dronesplat python=3.11</code><span>base environment</span>
+        <code>torch 2.4.0 + cu121</code><span>PyTorch with CUDA 12.1, RTX 4080 detected</span>
+        <code>numpy &lt; 2</code><span>downgraded to 1.26.4 (decord crashes on NumPy 2)</span>
+        <code>cuda-nvcc 12.6</code><span>compiles CUDA extensions, compatible with VS2025</span>
+        <code>simple-knn, diff-gaussian-rasterization</code><span>3DGS CUDA extensions (built from source)</span>
+        <code>sam2 (editable)</code><span>Segment Anything Model v2</span>
+      </div>
+    </div>
+    <p class="note">Verified: <code>torch.cuda.is_available() → True</code>, all CUDA extensions import. The dataset (Simingshan + Sculpture) was downloaded from the official Google Drive — it already ships COLMAP camera poses, so the DUSt3R step is optional.</p>
+  </section>
+
+  <section id="pipeline">
+    <h2><span class="n">03</span>The 4-stage pipeline</h2>
+    <p>The flow we ran for each scene:</p>
+    <div class="pipe">
+      <div class="step"><span class="k">1</span><h5>2D Segmentation</h5><p>SAM2 segments every instance per image → <code>masks.json</code></p></div>
+      <div class="step"><span class="k">2</span><h5>3DGS Training</h5><p>7,000 iterations, L1+SSIM loss with per-instance masking (<code>--use_masks</code>)</p></div>
+      <div class="step"><span class="k">3</span><h5>Render</h5><p>Re-render train &amp; test images from the Gaussian model</p></div>
+      <div class="step"><span class="k">4</span><h5>Evaluation</h5><p>Compute PSNR / SSIM / LPIPS vs ground truth</p></div>
+    </div>
+    <div class="card warn">
+      <b>A gotcha we hit:</b> SAM2’s default config (<code>sam2_hiera_l.yaml</code>) resolves to an empty stub file → error <code>Key 'model' is not in struct</code>.
+      Fix: use <code>--model_cfg configs/sam2/sam2_hiera_l.yaml</code>. Training uses instance threshold <code>--preset_instance_threshold 0.4</code> and starts masking at iteration 500 — both are <b>exactly the paper’s values</b> (λ<sub>L</sub>=0.4, masking active at 500).
+    </div>
+    <h3>SAM2 segmentation example</h3>
+    <div class="cols">
+      <figure><img src="assets/2411006_18_002.jpg" alt="input"/><figcaption>Input image (Simingshan)</figcaption></figure>
+      <figure><img src="assets/2411006_18_002_seg.jpg" alt="segmentation"/><figcaption>SAM2 instance segmentation result</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="results">
+    <h2><span class="n">04</span>Our reconstruction results</h2>
+    <p>Both scenes reconstructed successfully (7,000 iterations, ~7–12 min on an RTX 4080). Metrics on the test set:</p>
+    <div class="cols">
+      <div class="card">
+        <h3 style="margin-top:0">🏯 Simingshan <span class="pill">gate &amp; road · 24 photos</span></h3>
+        <div class="mrow">
+          <div class="metric"><b>23.36</b><span>PSNR ↑</span></div>
+          <div class="metric"><b>0.762</b><span>SSIM ↑</span></div>
+          <div class="metric"><b>0.152</b><span>LPIPS ↓</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">🗿 Sculpture <span class="pill">statue &amp; garden · 42 photos</span></h3>
+        <div class="mrow">
+          <div class="metric"><b>18.57</b><span>PSNR ↑</span></div>
+          <div class="metric"><b>0.502</b><span>SSIM ↑</span></div>
+          <div class="metric"><b>0.223</b><span>LPIPS ↓</span></div>
+        </div>
+      </div>
+    </div>
+    <p>Ground-truth (left) vs rendered output (right). Notice: <b>moving cars &amp; people disappear</b> in the render — a direct effect of distractor masking.</p>
+    <div class="cols">
+      <figure><img src="output/Simingshan/comparison_test.jpg" alt="Simingshan GT vs render"/><figcaption>Simingshan — GT vs render (10 test views). The road is cleared of vehicles.</figcaption></figure>
+      <figure><img src="output/Sculpture/comparison_test.jpg" alt="Sculpture GT vs render"/><figcaption>Sculpture — GT vs render. Statue &amp; garden reconstructed; fine detail is slightly softer.</figcaption></figure>
+    </div>
+    <p class="note">Note: our numbers come from the open-source <i>train.py</i> (per-instance residual masking + COLMAP initialization), not the paper’s full pipeline (DUSt3R + voxel-guided + global tracking). So they are not directly comparable to the paper’s tables — see <a href="#map">Paper ↔ our code</a>.</p>
+  </section>
+
+  <section id="viewer">
+    <h2><span class="n">05</span>Interactive viewers</h2>
+    <p>Two ways to view the 3D results (a local server <code>python -m http.server 8765</code> must be running in the <code>viewer/</code> folder):</p>
+    <div class="cols">
+      <div class="card blue">
+        <h3 style="margin-top:0">🛰️ 3DGS Orbit</h3>
+        <p>The real 3D model (Simingshan 1.43M Gaussians · Sculpture 3.07M). Drag to rotate, scroll to zoom.</p>
+        <p><a href="http://localhost:8765/index.html" target="_blank">▶ Simingshan</a> &nbsp;·&nbsp;
+           <a href="http://localhost:8765/sculpture/index.html" target="_blank">▶ Sculpture</a></p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">🌐 360° Panorama</h3>
+        <p>Street-View style — rendered as 6 cube faces, then stitched into an equirectangular image.</p>
+        <p><a href="http://localhost:8765/pano.html" target="_blank">▶ Simingshan</a> &nbsp;·&nbsp;
+           <a href="http://localhost:8765/sculpture/pano.html" target="_blank">▶ Sculpture</a></p>
+      </div>
+    </div>
+    <figure><img src="viewer/equirect.png" alt="Simingshan 360 panorama"/><figcaption>Simingshan equirectangular panorama. Content is concentrated in the forward-down direction (gate &amp; road); sides/back are dark because the drone capture only faces one arc — not a full 360° sweep.</figcaption></figure>
+  </section>
+
+  <!-- ============ PART 2 ============ -->
+  <section id="problem">
+    <h2><span class="n">06</span>The problems the paper solves</h2>
+    <div class="cols">
+      <div class="card warn">
+        <h3 style="margin-top:0">① Dynamic scenes (distractors)</h3>
+        <p>Moving objects (cars, pedestrians) violate the multi-view consistency assumption of 3DGS/NeRF → artifacts &amp; floaters.</p>
+        <p class="note">Prior methods: semantic segmentation (needs predefined classes, can’t tell a parked car from a moving one) or residuals (fail on the small distractors typical of drones). Many use a <b>fixed threshold</b> throughout training.</p>
+      </div>
+      <div class="card warn">
+        <h3 style="margin-top:0">② Limited viewpoints</h3>
+        <p>In a single flight, some areas are captured by only ~3 photos. Radiance fields then <b>overfit</b> to the inputs → poor novel-view quality.</p>
+        <p class="note">InstantSplat uses MVS priors (DUSt3R) for initialization, but adds no constraint on the subsequent 3DGS optimization, so that rich prior is wasted.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="framework">
+    <h2><span class="n">07</span>Overall framework</h2>
+    <p>Two pillars work together on top of 3DGS:</p>
+    <div class="pipe">
+      <div class="step"><span class="k">A</span><h5>MVS Priors</h5><p>DUSt3R predicts a dense point cloud + confidence from unposed photos</p></div>
+      <div class="step"><span class="k">B</span><h5>Point Sampling</h5><p>Confidence + geometric-feature (FPFH) sampling per voxel</p></div>
+      <div class="step"><span class="k">C</span><h5>Voxel-guided 3DGS</h5><p>Gaussian initialization + voxel-constrained optimization</p></div>
+      <div class="step"><span class="k">D</span><h5>Adaptive Masking</h5><p>Object-wise residual → adaptive local mask + global mask (SAM2 tracking)</p></div>
+    </div>
+    <div class="eq">3DGS loss with mask:&nbsp; L = (1−λ)·<b>M</b>·L<sub>L1</sub> + λ·<b>M</b>·L<sub>D-SSIM</sub>
+      &nbsp;&nbsp;→ the more accurate the mask <b>M</b>, the fewer the artifacts.</div>
+  </section>
+
+  <section id="masking">
+    <h2><span class="n">08</span>Adaptive Local-Global Masking</h2>
+    <p class="lead">Goal: identify dynamic-distractor pixels and hide them from the loss — without predefined classes, and with a threshold that <b>adapts</b> per scene &amp; training stage.</p>
+
+    <h3>Step 1 — Object-wise normalized residuals</h3>
+    <p>Compute the residual between render and GT, normalize L1 &amp; D-SSIM, and combine. SAM2 provides a mask per object; all pixels of one object share a single average residual value.</p>
+    <div class="eq">R̃ = (1−λ)·R̃<sub>L1</sub> + λ·R̃<sub>D-SSIM</sub> &nbsp;&nbsp;|&nbsp;&nbsp; R<sub>obj</sub> = mean of R̃ over the object’s pixels</div>
+
+    <h3>Step 2 — Adaptive Local Masking</h3>
+    <p>Instead of a fixed threshold, it is derived from the <b>residual statistics</b> of the frame: expectation + variance, with a relaxation early in training (when objects haven’t converged yet).</p>
+    <div class="eq">T<sub>L</sub>(t) = E[R] + Var[R]·( 1 + λ<sub>L</sub> · (T<sub>max</sub>−t)/T<sub>max</sub> )</div>
+    <p class="note">Objects whose average residual &gt; T<sub>L</sub> are flagged as distractors. Almost all static objects fall within 1 standard deviation of the expectation → those exceeding the threshold are dynamic.</p>
+
+    <h3>Step 3 — Complement Global Masking</h3>
+    <p>Problem: an object may be <b>temporarily still</b> (e.g., a car stopped at a red light) and slip past the local mask in that frame. Solution: a stricter global threshold (λ<sub>G</sub> &gt; 1+λ<sub>L</sub>); once an object ever exceeds T<sub>G</sub>, it becomes a <b>tracking candidate</b> — 5 prompt points (center + 4 edges) are fed to SAM2’s <b>video tracking</b> to flag it across all frames.</p>
+    <div class="eq">T<sub>G</sub> = E[R] + λ<sub>G</sub>·Var[R] &nbsp;&nbsp;|&nbsp;&nbsp; Final mask: &nbsp; M(t) = M<sub>local</sub>(t) ∪ M<sub>global</sub>(t)</div>
+    <div class="card acc">
+      <b>Intuition:</b> the <b>local</b> mask = “what looks dynamic right now”; the <b>global</b> mask = “objects ever caught moving, tracked across all frames.” The two complement each other.
+    </div>
+  </section>
+
+  <section id="voxel">
+    <h2><span class="n">09</span>Voxel-guided Gaussian Splatting</h2>
+    <p class="lead">Goal: accurate geometry even with limited views, by exploiting MVS priors without letting 3DGS “run away” during optimization.</p>
+
+    <h3>Geometric-aware Point Sampling</h3>
+    <p>DUSt3R produces a dense point cloud (often over-parameterized &amp; with position drift). Instead of using all of it, the paper filters: space is split into <b>N voxels</b>, each point scored by <b>confidence × geometric FPFH feature</b>, and only the <b>top-k</b> points per voxel are kept to initialize Gaussians.</p>
+    <div class="eq">Score(p) = Conf(p) · F̃PFH(p) &nbsp;&nbsp;→ keep the k highest-scoring points per voxel</div>
+
+    <h3>Voxel-guided Optimization</h3>
+    <p>Each Gaussian is “bound” to its voxel. If its center/scale exceeds a limit (τ × voxel length) it is flagged <b>unconstrained</b>; its gradient decays exponentially with distance from the voxel center. New Gaussians are only split/cloned into an empty voxel once the accumulated gradient passes γ₁. “Junk” voxels (too few Gaussians &lt; γ₂, or average opacity &lt; γ₃) are removed.</p>
+    <div class="card">
+      <b>Hyperparameters (paper):</b>
+      <span class="pill">λ<sub>L</sub> = 0.4</span><span class="pill">λ<sub>G</sub> = 2.8</span><span class="pill">N = 80 voxels</span>
+      <span class="pill">k = 3</span><span class="pill">τ = 3.5</span><span class="pill">γ₁ = 0.003</span>
+      <span class="pill">γ₂ = 2</span><span class="pill">γ₃ = 0.075</span><span class="pill">7,000 iters · A100</span>
+      <span class="pill">masking active @ iter 500</span>
+    </div>
+  </section>
+
+  <section id="dataset">
+    <h2><span class="n">10</span>The DroneSplat dataset</h2>
+    <p>The paper releases a dataset of <b>24 sequences</b> of in-the-wild drone footage — dynamic scenes (split into 3 levels by number of distractors) &amp; static. The experiments use:</p>
+    <ul class="tight">
+      <li><b>Distractor elimination</b> — 6 scenes of varying dynamics (including <b>Simingshan</b> &amp; <b>Sculpture</b>, which we used), each with enough images to avoid sparsity.</li>
+      <li><b>Limited-view reconstruction</b> — 2 static scenes with only <b>6 input views</b>.</li>
+      <li>Also evaluated on <b>NeRF On-the-go</b> &amp; <b>UrbanScene3D</b>.</li>
+    </ul>
+  </section>
+
+  <section id="tables">
+    <h2><span class="n">11</span>Paper’s quantitative results</h2>
+    <p>Trained on images <b>with</b> distractors, evaluated on images <b>without</b> distractors. “Ours” = full method; “Ours (COLMAP)” = COLMAP init + vanilla 3DGS (control). Source: paper Figure 6.</p>
+    <table>
+      <thead><tr><th class="l">Method</th><th colspan="3">Simingshan (high-dynamic)</th><th colspan="3">Sculpture</th></tr>
+      <tr><th class="l"></th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+      <tbody>
+        <tr><td class="l">3DGS (vanilla)</td><td>17.04</td><td>0.438</td><td>0.228</td><td>17.11</td><td>0.396</td><td>0.256</td></tr>
+        <tr><td class="l">Mip-Splatting</td><td>17.26</td><td>0.441</td><td>0.210</td><td>17.22</td><td>0.404</td><td>0.249</td></tr>
+        <tr><td class="l">GS-W</td><td>17.44</td><td>0.416</td><td>0.424</td><td>17.09</td><td>0.414</td><td>0.270</td></tr>
+        <tr><td class="l">WildGaussians</td><td>16.96</td><td>0.388</td><td>0.379</td><td>17.15</td><td>0.371</td><td>0.383</td></tr>
+        <tr><td class="l">NeRF On-the-go</td><td>15.58</td><td>0.318</td><td>0.471</td><td>17.04</td><td>0.228</td><td>0.606</td></tr>
+        <tr class="ours"><td class="l">Ours (COLMAP)</td><td>17.89</td><td>0.462</td><td>0.217</td><td>19.51</td><td>0.528</td><td class="best">0.197</td></tr>
+        <tr class="ours"><td class="l"><b>Ours</b></td><td class="best">17.79</td><td class="best">0.469</td><td class="best">0.214</td><td class="best">19.64</td><td>0.517</td><td class="best">0.192</td></tr>
+      </tbody>
+    </table>
+    <p class="note">On Sculpture, DroneSplat leads clearly (PSNR 19.6 vs ~17 for baselines). On Simingshan (highly dynamic) the gap is smaller but it still leads on SSIM &amp; LPIPS.</p>
+
+    <h3>Limited-view reconstruction (only 6 photos)</h3>
+    <table>
+      <thead><tr><th class="l">Method</th><th colspan="3">DroneSplat-static · Exhibition Hall</th><th colspan="3">UrbanScene3D · ArtSci</th></tr>
+      <tr><th class="l"></th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+      <tbody>
+        <tr><td class="l">3DGS</td><td>15.64</td><td>0.404</td><td>0.374</td><td>19.01</td><td>0.595</td><td>0.201</td></tr>
+        <tr><td class="l">Scaffold-GS</td><td>16.55</td><td>0.445</td><td>0.343</td><td>19.69</td><td>0.618</td><td>0.183</td></tr>
+        <tr><td class="l">FSGS</td><td>15.92</td><td>0.424</td><td>0.411</td><td>20.32</td><td>0.651</td><td>0.240</td></tr>
+        <tr><td class="l">InstantSplat</td><td>17.37</td><td>0.393</td><td>0.398</td><td>16.16</td><td>0.325</td><td>0.364</td></tr>
+        <tr class="ours"><td class="l"><b>Ours</b></td><td class="best">18.09</td><td class="best">0.496</td><td class="best">0.352</td><td class="best">20.47</td><td>0.639</td><td>0.215</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="ablation">
+    <h2><span class="n">12</span>Ablation study</h2>
+    <p>Each component contributes. On dynamic scenes, adding Local Masking → Global Masking → Voxel-guided improves quality step by step:</p>
+    <table>
+      <thead><tr><th class="l">Configuration</th><th>Local</th><th>Global</th><th>Voxel</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+      <tbody>
+        <tr><td class="l">(a) baseline</td><td>✗</td><td>✗</td><td>✗</td><td>19.02</td><td>0.552</td><td>0.244</td></tr>
+        <tr><td class="l">(b) + Local Masking</td><td>✓</td><td>✗</td><td>✗</td><td>20.71</td><td>0.609</td><td>0.223</td></tr>
+        <tr><td class="l">(c) + Global Masking</td><td>✓</td><td>✓</td><td>✗</td><td>20.74</td><td>0.616</td><td>0.221</td></tr>
+        <tr class="ours"><td class="l">(d) + Voxel-guided <b>(full)</b></td><td>✓</td><td>✓</td><td>✓</td><td class="best">20.86</td><td class="best">0.618</td><td class="best">0.217</td></tr>
+      </tbody>
+    </table>
+    <p class="note">On DroneSplat-static, the voxel-guided ablation shows: MVS priors alone + vanilla 3DGS actually <i>hurt</i> quality (over-parameterization), while point sampling + voxel-guided optimization push it to the best result (PSNR 16.0 → 18.1).</p>
+  </section>
+
+  <section id="contrib">
+    <h2><span class="n">13</span>Main contributions</h2>
+    <div class="card acc">
+      <ul class="tight">
+        <li>The first robust 3DGS framework designed specifically for in-the-wild drone imagery — removing dynamic distractors while addressing unconstrained optimization under limited views.</li>
+        <li><b>Adaptive Local-Global Masking</b> — combining local &amp; global segmentation heuristics with a statistical approach for superior distractor elimination.</li>
+        <li><b>Voxel-guided 3DGS</b> — geometric-aware point sampling + voxel-guided optimization, leveraging MVS priors without losing 3DGS’s representational capacity.</li>
+        <li>A released <b>dataset of 24 sequences</b> of in-the-wild drone footage (dynamic &amp; static).</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="map">
+    <h2><span class="n">14</span>Paper ↔ the code we ran</h2>
+    <p>Important for academic context — what we reproduced vs the paper’s full method:</p>
+    <table>
+      <thead><tr><th class="l">Paper component</th><th>In our pipeline?</th><th class="l">Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="l">SAM2 instance segmentation</td><td class="best">Yes</td><td class="l"><code>seg_all_instances.py</code></td></tr>
+        <tr><td class="l">Per-instance residual masking</td><td class="best">Yes (simplified)</td><td class="l"><code>train.py --use_masks</code>, threshold 0.4, starts at iter 500</td></tr>
+        <tr><td class="l">Adaptive threshold (E+Var)</td><td>Partial</td><td class="l">the released train.py uses a simplified instance-loss variant</td></tr>
+        <tr><td class="l">Global tracking (SAM2 video)</td><td>No</td><td class="l">not enabled in our run</td></tr>
+        <tr><td class="l">DUSt3R MVS priors</td><td>No</td><td class="l">we used the provided COLMAP poses &amp; points</td></tr>
+        <tr><td class="l">Voxel-guided optimization</td><td>No</td><td class="l">optional path via <code>preprocess.py</code></td></tr>
+      </tbody>
+    </table>
+    <p class="note">So our run is closest to the <b>“Ours (COLMAP)”</b> row without voxel-guided — not the full method. Our numbers also use the dataset’s train/test split as-is, so they don’t map 1:1 to the paper’s evaluation protocol (which tests on distractor-free images).</p>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    Built as explainer material for a Computer Vision course · DroneSplat (Tang et al., CVPR 2025).<br/>
+    Paper numbers quoted from the official CVPR Open Access PDF · result images from our own reconstruction.
+  </div>
+</footer>
+
+</body>
+</html>
