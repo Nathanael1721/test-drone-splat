@@ -16,10 +16,15 @@
 <body>
 <div id="info"><b>Sculpture · 3DGS</b><br/>Drag = rotate &nbsp;|&nbsp; Right-drag = pan &nbsp;|&nbsp; Scroll = zoom</div>
 <div id="loading">Loading 3D Gaussian Splat… (~24 MB)</div>
+<script>
+  function _gmErr(msg){ var l=document.getElementById('loading'); if(l){ l.style.color='#ff6b6b'; l.textContent='⚠ '+msg; } }
+  addEventListener('error', function(e){ _gmErr((e.message||'resource failed to load')+(e.filename?(' @ '+e.filename):'')); }, true);
+  addEventListener('unhandledrejection', function(e){ _gmErr('Load error: '+((e.reason&&e.reason.message)||e.reason)); });
+</script>
 <script type="importmap">
 {"imports":{
-  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
-  "@mkkellogg/gaussian-splats-3d":"https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.4.4/build/gaussian-splats-3d.module.js"
+  "three":"./lib/three.module.js",
+  "@mkkellogg/gaussian-splats-3d":"./lib/gaussian-splats-3d.module.js"
 }}
 </script>
 <script type="module">
