@@ -33,7 +33,7 @@ const viewer = new GaussianSplats3D.Viewer({
   cameraUp:[0,-1,0], initialCameraPosition:[0.14,-0.04,0.29], initialCameraLookAt:[2.348,0.919,10.701],
   sharedMemoryForWorkers:false, dynamicScene:false
 });
-viewer.addSplatScene('./models/sculpture.splat',{format:GaussianSplats3D.SceneFormat.Splat,showLoadingUI:false,progressiveLoad:true})
+viewer.addSplatScene('./models/sculpture.splat',{format:GaussianSplats3D.SceneFormat.Splat,showLoadingUI:false,progressiveLoad:false})
   .then(()=>{document.getElementById('loading').style.display='none';viewer.start();})
   .catch(e=>{document.getElementById('loading').textContent='Load failed: '+e;});
 </script>

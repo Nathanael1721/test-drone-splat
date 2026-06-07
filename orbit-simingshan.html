@@ -34,7 +34,7 @@ const viewer = new GaussianSplats3D.Viewer({
   cameraUp:[0,-1,0], initialCameraPosition:[0.47,-3.2,-16.0], initialCameraLookAt:[0.468,1.764,5.608],
   sharedMemoryForWorkers:false, dynamicScene:false
 });
-viewer.addSplatScene('./models/simingshan.splat',{format:GaussianSplats3D.SceneFormat.Splat,showLoadingUI:false,progressiveLoad:true})
+viewer.addSplatScene('./models/simingshan.splat',{format:GaussianSplats3D.SceneFormat.Splat,showLoadingUI:false,progressiveLoad:false})
   .then(()=>{document.getElementById('loading').style.display='none';viewer.start();})
   .catch(e=>{document.getElementById('loading').textContent='Load failed: '+e;});
 </script>
