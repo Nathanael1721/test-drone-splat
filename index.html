@@ -224,7 +224,7 @@
   <section id="viewers">
     <h2><span class="n">04</span>Live interactive viewers</h2>
     <p class="lead">Explore the actual reconstructions right here. Pick a <b>scene</b> and a <b>mode</b>, then press play.
-       The 3D model streams into your browser (≈44–94 MB) — give it a moment on first load.</p>
+       The 3D model streams into your browser (≈24 MB each) — give it a moment on first load.</p>
     <div class="viewerbox">
       <div class="vbar">
         <div class="vgroup"><span class="lbl">Scene</span>
@@ -242,7 +242,7 @@
         <iframe id="vframe" title="DroneSplat viewer" all=""></iframe>
         <div class="vplaceholder" id="vplace">
           <button class="playbtn" id="vplay">▶ Load 3D viewer</button>
-          <p id="vdesc">3D Orbit · Simingshan — drag to rotate, scroll to zoom, right-drag to pan. (~44 MB)</p>
+          <p id="vdesc">3D Orbit · Simingshan — drag to rotate, scroll to zoom, right-drag to pan. (~24 MB)</p>
         </div>
       </div>
     </div>
@@ -383,7 +383,7 @@
   var place = document.getElementById('vplace');
   var desc  = document.getElementById('vdesc');
   var full  = document.getElementById('vfull');
-  var sizes = {simingshan:'~44 MB', sculpture:'~94 MB'};
+  var sizes = {simingshan:'~24 MB', sculpture:'~24 MB'};
   var names = {simingshan:'Simingshan', sculpture:'Sculpture'};
 
   function page(){ return (mode==='orbit'?'orbit-':'pano-') + scene + '.html'; }

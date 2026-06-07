@@ -158,7 +158,7 @@
   <section id="viewers">
     <h2><span class="n">04</span>Viewer interaktif langsung</h2>
     <p class="lead">Jelajahi hasil rekonstruksi di sini. Pilih <b>scene</b> dan <b>mode</b>, lalu tekan play.
-       Model 3D di-stream ke browser (±44–94 MB) — beri waktu sebentar saat load pertama.</p>
+       Model 3D di-stream ke browser (±24 MB) — beri waktu sebentar saat load pertama.</p>
     <div class="viewerbox">
       <div class="vbar">
         <div class="vgroup"><span class="lbl">Scene</span>
@@ -176,7 +176,7 @@
         <iframe id="vframe" title="DroneSplat viewer"></iframe>
         <div class="vplaceholder" id="vplace">
           <button class="playbtn" id="vplay">▶ Muat viewer 3D</button>
-          <p id="vdesc">Orbit 3D · Simingshan — drag untuk memutar, scroll zoom, drag-kanan geser. (~44 MB)</p>
+          <p id="vdesc">Orbit 3D · Simingshan — drag untuk memutar, scroll zoom, drag-kanan geser. (~24 MB)</p>
         </div>
       </div>
     </div>
@@ -305,7 +305,7 @@
 (function(){
   var scene='simingshan',mode='orbit',loaded=false;
   var frame=document.getElementById('vframe'),place=document.getElementById('vplace'),desc=document.getElementById('vdesc'),full=document.getElementById('vfull');
-  var sizes={simingshan:'~44 MB',sculpture:'~94 MB'},names={simingshan:'Simingshan',sculpture:'Sculpture'};
+  var sizes={simingshan:'~24 MB',sculpture:'~24 MB'},names={simingshan:'Simingshan',sculpture:'Sculpture'};
   function page(){return (mode==='orbit'?'orbit-':'pano-')+scene+'.html';}
   function descText(){return mode==='orbit'?('Orbit 3D · '+names[scene]+' — drag untuk memutar, scroll zoom, drag-kanan geser. ('+sizes[scene]+')'):('360° · '+names[scene]+' — drag untuk melihat sekeliling, scroll zoom.');}
   function refresh(){full.href=page();desc.textContent=descText();if(loaded){frame.src=page();}}
